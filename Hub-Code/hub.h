@@ -230,7 +230,7 @@ const char hub_html[] PROGMEM = R"=====(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Home Hub</title>
- <script src="/jquery.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
@@ -275,25 +275,16 @@ const char hub_html[] PROGMEM = R"=====(
         <h3>None</h3>
         <br>
         <p>Subnet:</p>
-        <h3>None</h3>
+        <h3>192.168.4.0/24</h3>
         <br>
         <p>Home Hub:</p>
-        <h3>Not Connected</h3>
+        <h3>192.168.4.1</h3>
         <br>
         <p>Mac Address:</p>
-        <h3>None</h3>
+        <h3>B0:B2:1C:97:B7:C0</h3>
+        
+
     </div>
-  <div class="device-card">
-    <h2>Hub-Setup</h2>
-    <p>Connect device to Home Hub Network</p><br>
-    <form>
-      <label for="fname">Hub IP address:</label>
-      <input type="text" id="HUB_IP" name="HUB_IP" placeholder="0.0.0.0" required ><br><br>
-      <label for="fname">Hub Passphrase:</label>
-      <input type="password" id="Hub_Pass" name="Hub_Pass" placeholder="Optional"><br><br>
-      <input type="submit">
-    </form>
-  </div>
   </main>
 
   <div class="control-panel">
