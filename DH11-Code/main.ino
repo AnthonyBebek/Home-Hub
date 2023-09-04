@@ -13,16 +13,14 @@ String response;
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
+int Time_Delay = 5000; //In Milliseconds 900000 = 15 min AND 10000 = 10 seconds AND 5000 = 5 seconds
 
-String Name = "Master_Bed";
-
-String Type = "Temperature_Sensor";
+int type = 1;
 
 typedef struct struct_message {
-  String a;
-  String b;
-  int c;
-  int d;
+  int type;
+  float c;
+  float d;
 } struct_message;
 
 struct_message myData;
@@ -55,14 +53,29 @@ void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
 }
  
 
-void SendESPData(uint8_t* Data, int Temp, int Humid){
+void SendESPData(uint8_t* Data, float Temp, float Humid){
   uint8_t broadcastAddress[6];
   macAddressToByteArray(response, broadcastAddress);
   if ((millis() - lastTime) > timerDelay) {
-    myData.a = Name;
-    myData.b = Type;
+    myData.type = type;
+
+    // Serialize Temp and Humid as little-endian bytes
     myData.c = Temp;
     myData.d = Humid;
+    /*
+    // Convert integers to little-endian byte order
+    uint8_t tempBytes[sizeof(int)];
+    uint8_t humidBytes[sizeof(int)];
+
+    for (int i = 0; i < sizeof(int); i++) {
+      tempBytes[i] = (Temp >> (i * 8)) & 0xFF;
+      humidBytes[i] = (Humid >> (i * 8)) & 0xFF;
+    }
+
+    // Copy the bytes into the data structure
+    memcpy(&myData.c, tempBytes, sizeof(int));
+    memcpy(&myData.d, humidBytes, sizeof(int));
+    */
 
     esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
 
@@ -85,7 +98,7 @@ float get_temp()
  if (isnan(t)) {
  Serial.println("Failed to read from DHT sensor!");
  }
-  delay(1000);
+  //delay(1000);
   return t;
 }
 
@@ -96,13 +109,27 @@ float get_humid()
  if (isnan(h)) {
  Serial.println("Failed to read from DHT sensor!");
  }
-  delay(1000);
+  //delay(1000);
   return h;
 }
 
 
 void loop() {
-  if (!isnan(get_temp()) && !isnan(get_humid())){
-    SendESPData(getMAC(), get_temp(), get_humid());
+  float temp = get_temp();
+  float humid = get_humid();
+  Serial.println("----------");
+  Serial.print("Temp: ");
+  Serial.println(temp);
+  Serial.print("Humidity: ");
+  Serial.println(humid);
+  Serial.println("----------");
+  if (!isnan(temp) && !isnan(humid)){
+    Serial.println("Found Temp");
+    SendESPData(getMAC(), temp, humid);
   }
+  else{
+    Serial.println("Found NULL");
+    SendESPData(getMAC(),0.00,0.00);
+  }
+  delay(Time_Delay);
 }
