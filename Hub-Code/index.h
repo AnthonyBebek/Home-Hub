@@ -1,4 +1,4 @@
-const char index_html[] PROGMEM = R"=====(
+const char index_html[] PROGMEM = R"=====(<!DOCTYPE html>
 <!DOCTYPE html>
 <html lang="en">
 <style>
@@ -195,7 +195,124 @@ const char index_html[] PROGMEM = R"=====(
         -webkit-transform: translateX(26px);
         -ms-transform: translateX(26px);
         transform: translateX(26px);
-      }    
+      }
+
+      .category-caption {
+        font-weight: bold;
+        font-size: 18px;
+        color: #171616;
+        margin: 0;
+        padding: 0;
+      }  
+      .category-table {
+        margin-bottom: 20px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      
+      th, td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+      
+      tr:nth-child(even) {
+        background-color: #e4e4e4;
+      }
+     /* 
+      @media (max-width: 768px) {
+      .category-caption {
+        font-weight: bold;
+        font-size: 18px;
+        color: #171616;
+        margin: 0;
+        padding: 0;
+      }  
+      .category-table {
+        margin-bottom: 20px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      
+      th, td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+      
+      tr:nth-child(even) {
+        background-color: #e4e4e4;
+      }
+    }
+         */
+
+         /* Switch CSS */
+
+         .switch {
+          position: relative;
+          display: inline-block;
+          width: 60px;
+          height: 34px;
+        }
+        
+        .switch input { 
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+        
+        .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ccc;
+          -webkit-transition: .4s;
+          transition: .4s;
+        }
+        
+        .slider:before {
+          position: absolute;
+          content: "";
+          height: 26px;
+          width: 26px;
+          left: 4px;
+          bottom: 4px;
+          background-color: white;
+          -webkit-transition: .4s;
+          transition: .4s;
+        }
+        
+        input:checked + .slider {
+          background-color: #2196F3;
+        }
+        
+        input:focus + .slider {
+          box-shadow: 0 0 1px #2196F3;
+        }
+        
+        input:checked + .slider:before {
+          -webkit-transform: translateX(26px);
+          -ms-transform: translateX(26px);
+          transform: translateX(26px);
+        }
+        
+        /* Rounded sliders */
+        .slider.round {
+          border-radius: 34px;
+        }
+        
+        .slider.round:before {
+          border-radius: 50%;
+        }
+         
+
 </style>
 
 <head>
@@ -238,11 +355,18 @@ const char index_html[] PROGMEM = R"=====(
       </label>
     -->
     <h2>Sensors</h2>
-    <table style="width:100%" id="Sensors">
+    <br>
+    <table id="Sensors">
     </table>
-
     </div>
-    
+    <div class="device-card">
+      <h2>Switches</h2>
+      <br>
+      <table id="Switches">
+      </table>
+    </div>
+
+  
 
   </main>
 
@@ -260,52 +384,230 @@ const char index_html[] PROGMEM = R"=====(
       console.log("Nav Toggle");
     }
   </script>
-    <script src="/jquery.min.js"></script>
     <script>
-      $.ajax({
-        type: "GET",
-        url: "/Sensor_Data",
-        dataType: "json",
-        success: function(data) {
-          console.log("Devices Found: ", data);
+      let xhr= new XMLHttpRequest();
+
+      xhr.responseType='';
+      xhr.onreadystatechange=()=>{
       
-          let table = document.querySelector("#Sensors");
-          let keys = Object.keys(data[0]);
-          generateTableHead(table, keys);
-          generateTable(table, data);
-        },
-        error: function(xhr, status, error) {
-          console.error("Error fetching devices:", error);
+        if(xhr.status==200 && xhr.readyState==4){
+          console.log(JSON.parse(xhr.responseText));
+          console.log(xhr.responseType);
+          var Rawdata = xhr.responseText;
+          console.log("Sensor Data: ", data);
+
+          var data = JSON.parse(Rawdata);
+      
+            let table = document.querySelector("#Sensors");
+            let keys = Object.keys(data[0]);
+            generateTableHead(table, keys);
+            generateTable(table, data);
         }
-      });
-  
-  function generateTableHead(table, data) {
-    let thead = table.createTHead();
-    let row = thead.insertRow();
-    for (let key of data) {
-      let th = document.createElement("th");
-      let text = document.createTextNode(key);
-      th.appendChild(text);
-      row.appendChild(th);
-    }
-    let th = document.createElement("th");
-    let button = document.createTextNode("");
-    th.appendChild(button);
-    row.appendChild(th);
-  }
-  
-  function generateTable(table, data) {
-    for (let element of data) {
-      let row = table.insertRow();
-      for (key in element) {
-        let cell = row.insertCell();
-        let text = document.createTextNode(element[key]);
-        cell.appendChild(text);
+      };      
+        let url = "/Sensor_Data"
+        xhr.open("GET", url);
+        xhr.send();
+
+
+/*
+      function request(success, error) {
+        var request = new XMLHttpRequest();
+        request.open('GET', '/Sensor_Data', true);
+        console.log("Getting Sensor Data");
+        request.send();
+      
+        request.onload = function () {
+          if (this.status >= 200 && this.status < 400) {
+            // Success!
+            console.log("Sensor Data: ", data);
+      
+            let table = document.querySelector("#Sensors");
+            let keys = Object.keys(data[0]);
+            generateTableHead(table, keys);
+            generateTable(table, data);
+
+            success(this.responseText, this.status);
+          } else {
+            // We reached our target server, but it returned an error
+            console.error("Error fetching devices:", error);
+            error();
+          }
+        };
+      
+        request.onerror = function () {
+          error();
+        };
+      
+        request.send();
       }
+      console.log("Requesting");
+      request;
+      console.log("Ran request function");
+
+      */
+
+
+      /*
+      data = [
+  {"Name": "Master Bed", "Category": "Temperature", "Data": "32"},
+  {"Name": "Kitchen", "Category": "Temperature", "Data": "48"},
+  {"Name": "Living Room", "Category": "Humidity", "Data": "2"},
+  {"Name": "Bathroom", "Category": "Humidity", "Data": "12"},
+  {"Name": "Outside", "Category": "Air Quality", "Data": "512"},
+  {"Name": "Inside", "Category": "Air Quality", "Data": "12"},
+  {"Name": "Master Bed", "Category": "Temperature", "Data": "56"},
+  {"Name": "Kitchen", "Category": "Temperature", "Data": "21"},
+  {"Name": "Living Room", "Category": "Humidity", "Data": "14"},
+  {"Name": "Bathroom", "Category": "Humidity", "Data": "16"}
+];
+*/
+
+let mainTable = document.querySelector("#Sensors");
+
+let categoryTables = {};
+
+data.forEach(element => {
+  if (!categoryTables[element.Category]) {
+    categoryTables[element.Category] = createCategoryTable(element.Category);
+    mainTable.appendChild(categoryTables[element.Category]);
+  }
+  generateTable(categoryTables[element.Category], [element]);
+});
+
+function createCategoryTable(category) {
+  let table = document.createElement("table");
+  let caption = table.createCaption();
+  caption.textContent = category;
+  caption.className = "category-caption";
+  table.className = "category-table";
+  generateTableHead(table, ["Name", "Value1", "Value2"]);
+  return table;
+}
+
+function generateTableHead(table, data) {
+  let thead = table.createTHead();
+  let row = thead.insertRow();
+  for (let key of data) {
+    if (key != "Category"){
+    let th = document.createElement("th");
+    let text = document.createTextNode(key);
+    th.appendChild(text);
+    row.appendChild(th);
     }
   }
+}
+
+function generateTable(table, data) {
+  for (let element of data) {
+    let row = table.insertRow();
+    console.log(element);
+    row.insertCell().appendChild(document.createTextNode(element.Name));
+    row.insertCell().appendChild(document.createTextNode(element.Value1));
+    row.insertCell().appendChild(document.createTextNode(element.Value2));
+  }
+}
+
+
+/*
+
+$.ajax({
+  type: "GET",
+  url: "/Switch_Data",
+  dataType: "json",
+  success: function(data) {
+    console.log("Switch Data: ", data);
+
+    let table = document.querySelector("#Switches");
+    let keys = Object.keys(data[0]);
+    generateTableHead(table, keys);
+    generateTable(table, data);
+  },
+  error: function(xhr, status, error) {
+    console.error("Error fetching switches:", error);
+  }
+});
+*/
+data = [
+{"Name": "Master Bed", "Category": "Temperature"},
+{"Name": "Kitchen", "Category": "Temperature"},
+{"Name": "Living Room", "Category": "Light"},
+{"Name": "Bathroom", "Category": "Light"},
+{"Name": "Outside", "Category": "Air Quality"},
+{"Name": "Inside", "Category": "Air Quality"},
+];
+
+mainTable = document.querySelector("#Switches");
+
+categoryTables = {};
+
+data.forEach(element => {
+if (!categoryTables[element.Category]) {
+categoryTables[element.Category] = createCategoryTable2(element.Category);
+mainTable.appendChild(categoryTables[element.Category]);
+}
+generateTable2(categoryTables[element.Category], [element]);
+});
+
+function createCategoryTable2(category) {
+let table = document.createElement("table");
+let caption = table.createCaption();
+caption.textContent = category;
+caption.className = "category-caption";
+table.className = "category-table";
+generateTableHead2(table, ["Name", ""]);
+return table;
+}
+
+function generateTableHead2(table, data) {
+let thead = table.createTHead();
+let row = thead.insertRow();
+for (let key of data) {
+let th = document.createElement("th");
+let text = document.createTextNode(key);
+th.appendChild(text);
+row.appendChild(th);
+  }
+}
+
+function generateTable2(table, data) {
+  for (let element of data) {
+    let row = table.insertRow();
+    row.insertCell().appendChild(document.createTextNode(element.Name));
+
+    let label = document.createElement("label");
+    label.classList.add("switch");
+
+    let checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = true;
+    checkbox.setAttribute('id', 'switch');
+    Name = element.Name.replace(/ /g,"_");
+    CategoryName = element.Category.replace(/ /g,"_");
+  //console.log(Name);
+  //console.log(CategoryName)
+  //console.log(button);
+    checkbox.setAttribute('onclick','send(\'' + String(Name) + '\', \'' + String(CategoryName) + '\', \'' + String(button) + '\')');
+    checkbox.setAttribute('id', String(button));
+    label.appendChild(checkbox);
+
+    let sliderSpan = document.createElement("span");
+    sliderSpan.classList.add("slider", "round");
+    label.appendChild(sliderSpan);
+
+    row.insertCell().appendChild(label);
+    button = ++button;
+  }
+}
+
+
+function send(name, category, ID){
+  console.log("Name: " + name);
+  console.log("Category: " + category);
+  console.log(document.getElementById(ID).checked);
+}
   </script> 
 </body>
 
 </html>
+
 )=====";
