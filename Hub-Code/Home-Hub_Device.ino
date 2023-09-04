@@ -1,25 +1,35 @@
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
+#include <WiFi.h>
+#include "esp_wifi.h"
+#include <WebServer.h>
+#include <mDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <list>
-#include <espnow.h>
+#include <esp_now.h>
 
 //Networking Array work
 #include "temp.h"
 std::list<String> macAddresses;
 
 //esp-Now
-typedef struct struct_message {
-  String a;
-  String b;
-  int c;
-  int d;
-} struct_message;
+//typedef struct struct_message {
+//  char name[32]; // Maximum length for Name
+//  char type[32]; // Maximum length for Type
+//  int c;         // Temp
+//  int d;         // Humid
+//} struct_message;
+
+struct MyData {
+  int type; // Maximum length for Type
+  float c;         // Temp
+  float d;         // Humid
+};
+
+MyData myData;
 
 
-struct_message myData;
+
+//struct_message myData;
 
 //Website Pages
 #include "index.h"
@@ -35,6 +45,7 @@ struct_message myData;
 
 //External Scripts
 #include "NetworkSettings.h"
+#include "SensorData.h"
 
 
 //#define OTA_Host_Name "HHClient-Temperature"
@@ -42,7 +53,7 @@ struct_message myData;
 
 const char* ssid = OTA_Host_Name;
 
-ESP8266WebServer server(80);
+WebServer server(80);
 
 void handleGetMAC() {
   Serial.println(WiFi.macAddress());
@@ -68,7 +79,10 @@ void handleRoot() {
 }
 
 void handleJQuery() {
-  server.send(200, "text/javascript", jquery_min_js);
+  Serial.println("Free heap: " + String(ESP.getFreeHeap()) + " bytes");
+  server.send(200, "text/html", jquery_min_js);
+  Serial.println(jquery_min_js);
+  Serial.println("Jquery Requested");
 }
 
 void handleHub() {
@@ -157,31 +171,60 @@ void handleNetworkDevices() {
 
 void handleSensorData() {
   Serial.println("Sensor Data Requested");
-  server.send(200, "application/json", R"=====([
-    {"Name": "Bed1", "Catagory": "Temperature", "Data": "32"},
-    {"Name": "Bed2", "Catagory": "Temperature", "Data": "48"}
-  ])=====");
+  String Sensor_Data = GetSensorValues();
+  server.send(200, "application/json", Sensor_Data);
 }
 
-void OnDataRecv(uint8_t* mac, uint8_t* incomingData, uint8_t len) {
+void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
+  String Data1;
+  bool Switch = false;
   memcpy(&myData, incomingData, sizeof(myData));
-  Serial.print("Bytes received: ");
-  Serial.println(len);
-  Serial.print("Name: ");
-  Serial.println(myData.a);
+
+  Serial.print("Received from MAC: ");
+ 
+  for (int i = 0; i < 6; i++) {
+ 
+    Serial.printf("%02X", mac[i]);
+    if (i < 5)Serial.print(":");
+  }
+  Serial.println();
+  Serial.println("Received raw data:");
+  for (int i = 0; i < len; i++) {
+    Serial.print(incomingData[i], HEX);
+    Serial.print(' ');
+  }
+  Serial.println();
+  Serial.println("Received data:");
+
+  for (int i = 0; i < len; i++) {
+    if (incomingData[i] == 0) {
+    } 
+    else 
+    {
+      if (Switch == false && incomingData[i] != 10){
+        Data1 = Data1 + (char)incomingData[i];
+      }
+    }
+  }
+  
   Serial.print("Type: ");
-  Serial.println(myData.b);
-  Serial.print("Temp: ");
+  Serial.println(myData.type);
+  Serial.println();
+  Serial.print("Value 1: ");
   Serial.println(myData.c);
-  Serial.println();
-  Serial.print("Humidity: ");
+  Serial.print("Value 2: ");
   Serial.println(myData.d);
-  Serial.println();
+  
+  updateSensorData("The", String(myData.type), myData.c, myData.d);
+  Serial.println("Printing Table Data");
+  //printSensorData();
+  
 }
+
 
 void setup() {
   Serial.begin(115200);
-  //createPoint(ssid);
+  createPoint(ssid);
   Serial.println("");
   //Serial.print("Connected to WiFi. IP address: ");
   server.on("/getmac", HTTP_GET, handleGetMAC);
@@ -201,30 +244,29 @@ void setup() {
   server.on("/Network_Found", handleNetworkDevices);
   server.on("/Sensor_Data", handleSensorData);
 
-
- Serial.println("[*] Initializing ESP-NOW");
-  if (esp_now_init() != 0) {
-    Serial.println("[!] Error initializing ESP-NOW");
+  Serial.println("[*] Setting up WiFi Station");
+  Serial.println("[+] WiFi Station online!");
+  Serial.println("[*] Initializing ESP-NOW");
+  Serial.println(ESP.getFreeHeap());
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("[!] Error initalizing ESP-NOW");
     return;
-  }
-  else{
-    esp_now_set_self_role(ESP_NOW_ROLE_SLAVE);
+  } else {
     Serial.println("[+] ESP-NOW Ready");
   }
- esp_now_register_recv_cb(OnDataRecv);
+  esp_now_register_recv_cb(OnDataRecv);
 
   server.begin();
   Serial.println("HTTP server started.");
   ArduinoOTA.setHostname(OTA_Host_Name);
   ArduinoOTA.begin();
   Serial.println("OTA server started.");
-
 }
 
 void loop() {
   server.handleClient();
-  ArduinoOTA.handle();
+  delay(1);
+  //ArduinoOTA.handle();
   //Serial.println("Free heap: " + String(ESP.getFreeHeap()) + " bytes");
-  client_status();
-  esp_now_register_recv_cb(OnDataRecv);
+  //client_status();
 }
