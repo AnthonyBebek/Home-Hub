@@ -1,8 +1,3 @@
-extern "C" {
-#include <user_interface.h>
-}
-
-
 bool isMacAddressStored(const String& macStr) {
   for (const String& storedMac : macAddresses) {
     if (storedMac == macStr) {
@@ -68,7 +63,6 @@ String generateJsonWithMACs() {
     String deviceName = "Device " + String(deviceNumber);
     String newDeviceEntry = "{\"Device\": \"" + deviceName + "\", \"MAC\": \"" + modifiedMac + "\"},";\
     jsonResult = jsonResult + "\n" + newDeviceEntry;
-    //jsonResult = jsonResult.substring(0, jsonResult.length() - 5) + newDeviceEntry;
     deviceNumber++;
   }
   jsonResult.remove(jsonResult.length() - 1);
@@ -80,14 +74,16 @@ String generateJsonWithMACs() {
 }
 
 void client_status() {
+/*
+
 unsigned char number_client;
 struct station_info* stat_info;
 
 struct ip4_addr* IPaddress;
 int i = 1;
 
-number_client = wifi_softap_get_station_num();
-stat_info = wifi_softap_get_station_info();
+number_client = WiFi.softAPgetStationNum();
+stat_info = WiFi.softAPgetStation();
 
 while (stat_info != NULL) {
   IPaddress = &stat_info->ip;
@@ -101,4 +97,22 @@ while (stat_info != NULL) {
   i++;
 }
 wifi_softap_free_station_info();
+
+*/
+wifi_sta_list_t stationList;    /*Number of connected stations*/
+  esp_wifi_ap_get_sta_list(&stationList);  
+  Serial.print("N of connected stations: ");
+  Serial.println(stationList.num);
+  for(int i = 0; i < stationList.num; i++) {
+    wifi_sta_info_t station = stationList.sta[i];
+    for(int j = 0; j< 6; j++){
+      char str[3];
+      sprintf(str, "%02x", (int)station.mac[j]);  /*prints MAC address of connected station*/
+      Serial.print(str);
+      if(j<5){
+        Serial.print(":");
+      }
+    }
+    Serial.println();
+  }
 }
