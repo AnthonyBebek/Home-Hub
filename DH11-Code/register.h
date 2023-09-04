@@ -59,6 +59,7 @@ uint8_t* getMAC(){
   
   delay(5000); 
   }
+  Serial.println(response);
   macAddressToByteArray(response, broadcastAddress);
 
   return broadcastAddress;
