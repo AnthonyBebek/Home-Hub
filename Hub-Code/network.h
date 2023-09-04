@@ -269,9 +269,38 @@ const char network_html[] PROGMEM = R"=====(
       console.log("Nav Toggle");
     }
   </script> 
-  <script src="/jquery.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
 
+    function request(success, error) {
+      var request = new XMLHttpRequest();
+      request.open('GET', '/Network_Found', true);
+    
+      request.onload = function () {
+        if (this.status >= 200 && this.status < 400) {
+          // Success
+          console.log("Devices Found: ", data);
+    
+          let table = document.querySelector("#devices");
+          let keys = Object.keys(data[0]);
+          generateTableHead(table, keys);
+          generateTable(table, data);
+          success(this.responseText, this.status);
+        } else {
+          //Error
+          console.error("Error fetching devices:", error);
+          error();
+        }
+      };
+    
+      request.onerror = function () {
+        error();
+      };
+    
+      request.send();
+    }
+    
+/*
     $.ajax({
       type: "GET",
       url: "/Network_Found",
@@ -280,7 +309,7 @@ const char network_html[] PROGMEM = R"=====(
         console.log("Devices Found: ", data);
     
         let table = document.querySelector("#devices");
-        let keys = ["Device", "MAC"];
+        let keys = Object.keys(data[0]);
         generateTableHead(table, keys);
         generateTable(table, data);
       },
@@ -288,7 +317,7 @@ const char network_html[] PROGMEM = R"=====(
         console.error("Error fetching devices:", error);
       }
     });
-
+*/
 function generateTableHead(table, data) {
   let thead = table.createTHead();
   let row = thead.insertRow();
@@ -330,6 +359,8 @@ function run(MAC){
   var data = {
     MAC_Address: MAC
   };
+
+  
   $.ajax({
     type: "POST",
     url: "/Network_Add",
