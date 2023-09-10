@@ -7,14 +7,14 @@ bool NewSensor;
 struct SensorData {
   String name;
   String type;
-  int value1;
-  int value2;
+  float value1;
+  float value2;
 };
 
 SensorData sensorArray[maxSensors];
 int numSensors = 0;
 
-void updateSensorData(String name, String type, int value1, int value2) {
+void updateSensorData(String name, String type, float value1, float value2) {
   if (name != NULL && type != NULL) {
     NewSensor = true;
     for (int i = 0; i < numSensors; i++) {
@@ -34,12 +34,10 @@ void updateSensorData(String name, String type, int value1, int value2) {
         sensorArray[numSensors].value1 = value1;
         sensorArray[numSensors].value2 = value2;
         numSensors++;
-      }
-      else{
+      } else {
         Serial.println("Sensor Limit Met!");
       }
-    } 
-    else {
+    } else {
       //Serial.println("Old Sensor Exception Met");
     }
   }
@@ -47,6 +45,8 @@ void updateSensorData(String name, String type, int value1, int value2) {
 }
 
 void printSensorData() {
+  Serial.println("Printing Sensor Data");
+  Serial.println();
   for (int i = 0; i < numSensors; i++) {
     Serial.print("Sensor Name: ");
     Serial.println(sensorArray[i].name);
@@ -66,6 +66,7 @@ void printSensorData() {
 
 
 String GetSensorValues() {
+  String newSensor;
   String result = "[";
   String sensor[4];
   for (int i = 0; i < numSensors; i++) {
@@ -74,11 +75,21 @@ String GetSensorValues() {
     int value1 = sensorArray[i].value1;
     int value2 = sensorArray[i].value2;
 
-    type.remove(result.length() - 1);
+    //type.remove(result.length() - 1);
 
-    type = "The";
 
-    String newSensor = "{\"Name\": \"" + name + "\", \"Category\": \"" + type + "\", \"Value2\": \"" + value1 + "\", \"Value1\": \"" + value2 + "\"},";
+    Serial.println("----------------------------------------------------");
+    Serial.println("Updating Website...");
+    Serial.print("Name: ");
+    Serial.println(sensorArray[i].name);
+    Serial.print("Type: ");
+    Serial.println(sensorArray[i].type);
+    Serial.println("----------------------------------------------------");
+    if (String(sensorArray[i].type) == "DHT") {
+      newSensor = "{\"Name\": \"" + String(sensorArray[i].name) + "\", \"Category\": \"" + String(sensorArray[i].type) + "\", \"Temperature\": \"" + String(sensorArray[i].value1) + "°C" + "\", \"Humidity\": \"" + String(sensorArray[i].value2) + "%" + "\"},";
+    } else {
+      newSensor = "{\"Name\": \"" + String(sensorArray[i].name) + "\", \"Category\": \"" + String(sensorArray[i].type) + "\", \"Value1\": \"" + String(sensorArray[i].value1) + "\", \"Value2\": \"" + String(sensorArray[i].value2) + "\"},";
+    }
     result = result + newSensor;
   }
   Serial.println(result);
