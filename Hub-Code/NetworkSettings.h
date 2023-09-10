@@ -1,4 +1,8 @@
 void changeWifiSettings(const char* newSSID, const char* newPassword, const char* newIP, const char* newSubnet) {
+  Serial.print("Connecting to: ");
+  Serial.println(newSSID);
+  Serial.print("With: ");
+  Serial.println(newPassword);
   WiFi.begin(newSSID, newPassword);
 
   if (strlen(newIP) > 0 && strlen(newSubnet) > 0) {
@@ -9,7 +13,7 @@ void changeWifiSettings(const char* newSSID, const char* newPassword, const char
       delay(100);
       WiFi.softAPdisconnect(true);
 
-      WiFi.mode(WIFI_STA);
+      WiFi.mode(WIFI_AP_STA);
       WiFi.config(newIPAddress, IPAddress(0, 0, 0, 0), newSubnetMask);
 
       WiFi.begin(newSSID, newPassword);
