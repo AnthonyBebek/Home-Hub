@@ -318,13 +318,13 @@ const char index_html[] PROGMEM = R"=====(<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Home Hub</title>
+  <title>WASP Hub</title>
 </head>
 
 <body>
   <header>
     <div class="logo">
-      <h1>Smart Home Hub</h1>
+      <h1>WASP Hub</h1>
     </div>
   </header>
   <!-- Nav Bar -->
@@ -374,8 +374,8 @@ const char index_html[] PROGMEM = R"=====(<!DOCTYPE html>
   </div>
 
   <footer>
-    <p>This website is running off a Home Hub Device</p>
-    <p>&copy; 2023 Home Hub. All rights reserved.</p>
+    <p>This website is running off a WASP Hub Device</p>
+    <p>&copy; 2023 WASP Hub. All rights reserved.</p>
   </footer>
   <script>
     function toggleNav() {
@@ -409,64 +409,13 @@ const char index_html[] PROGMEM = R"=====(<!DOCTYPE html>
         xhr.send();
 
 
-/*
-      function request(success, error) {
-        var request = new XMLHttpRequest();
-        request.open('GET', '/Sensor_Data', true);
-        console.log("Getting Sensor Data");
-        request.send();
-      
-        request.onload = function () {
-          if (this.status >= 200 && this.status < 400) {
-            // Success!
-            console.log("Sensor Data: ", data);
-      
-            let table = document.querySelector("#Sensors");
-            let keys = Object.keys(data[0]);
-            generateTableHead(table, keys);
-            generateTable(table, data);
-
-            success(this.responseText, this.status);
-          } else {
-            // We reached our target server, but it returned an error
-            console.error("Error fetching devices:", error);
-            error();
-          }
-        };
-      
-        request.onerror = function () {
-          error();
-        };
-      
-        request.send();
-      }
-      console.log("Requesting");
-      request;
-      console.log("Ran request function");
-
-      */
-
-
-      /*
-      data = [
-  {"Name": "Master Bed", "Category": "Temperature", "Data": "32"},
-  {"Name": "Kitchen", "Category": "Temperature", "Data": "48"},
-  {"Name": "Living Room", "Category": "Humidity", "Data": "2"},
-  {"Name": "Bathroom", "Category": "Humidity", "Data": "12"},
-  {"Name": "Outside", "Category": "Air Quality", "Data": "512"},
-  {"Name": "Inside", "Category": "Air Quality", "Data": "12"},
-  {"Name": "Master Bed", "Category": "Temperature", "Data": "56"},
-  {"Name": "Kitchen", "Category": "Temperature", "Data": "21"},
-  {"Name": "Living Room", "Category": "Humidity", "Data": "14"},
-  {"Name": "Bathroom", "Category": "Humidity", "Data": "16"}
-];
-*/
 
 let mainTable = document.querySelector("#Sensors");
 
 let categoryTables = {};
 
 data.forEach(element => {
+  console.log("The");
   if (!categoryTables[element.Category]) {
     categoryTables[element.Category] = createCategoryTable(element.Category);
     mainTable.appendChild(categoryTables[element.Category]);
@@ -475,16 +424,19 @@ data.forEach(element => {
 });
 
 function createCategoryTable(category) {
+  console.log("Creating Category Table");
+  console.log(category);
   let table = document.createElement("table");
   let caption = table.createCaption();
   caption.textContent = category;
   caption.className = "category-caption";
   table.className = "category-table";
-  generateTableHead(table, ["Name", "Value1", "Value2"]);
+  generateTableHead(table, ["Name", "Temperature", "Humidity"]);
   return table;
 }
 
 function generateTableHead(table, data) {
+  console.log("Table Head Generated");
   let thead = table.createTHead();
   let row = thead.insertRow();
   for (let key of data) {
@@ -502,8 +454,8 @@ function generateTable(table, data) {
     let row = table.insertRow();
     console.log(element);
     row.insertCell().appendChild(document.createTextNode(element.Name));
-    row.insertCell().appendChild(document.createTextNode(element.Value1));
-    row.insertCell().appendChild(document.createTextNode(element.Value2));
+    row.insertCell().appendChild(document.createTextNode(element.Temperature));
+    row.insertCell().appendChild(document.createTextNode(element.Humidity));
   }
 }
 
