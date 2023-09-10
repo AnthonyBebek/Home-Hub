@@ -5,19 +5,13 @@
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <list>
+#include <EEPROM.h>
 #include <esp_now.h>
 
 //Networking Array work
 #include "temp.h"
 std::list<String> macAddresses;
 
-//esp-Now
-//typedef struct struct_message {
-//  char name[32]; // Maximum length for Name
-//  char type[32]; // Maximum length for Type
-//  int c;         // Temp
-//  int d;         // Humid
-//} struct_message;
 
 struct MyData {
   int type; // Maximum length for Type
@@ -26,10 +20,6 @@ struct MyData {
 };
 
 MyData myData;
-
-
-
-//struct_message myData;
 
 //Website Pages
 #include "index.h"
@@ -46,10 +36,12 @@ MyData myData;
 //External Scripts
 #include "NetworkSettings.h"
 #include "SensorData.h"
-
+#include "Support.h"
+#include "time.h"
+#include "SDSave.h"
 
 //#define OTA_Host_Name "HHClient-Temperature"
-#define OTA_Host_Name "THREE"
+#define OTA_Host_Name "WASP-Network"
 
 const char* ssid = OTA_Host_Name;
 
@@ -177,56 +169,50 @@ void handleSensorData() {
 
 void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
   String Data1;
-  bool Switch = false;
+  String MAC;
   memcpy(&myData, incomingData, sizeof(myData));
 
-  Serial.print("Received from MAC: ");
  
   for (int i = 0; i < 6; i++) {
- 
-    Serial.printf("%02X", mac[i]);
-    if (i < 5)Serial.print(":");
+    MAC = MAC + (convertDecimalToHex(mac[i]));
+    if (i < 5){
+      MAC = MAC + ":";
+    }
   }
-  Serial.println();
-  Serial.println("Received raw data:");
+  Serial.print("Received RAW data: ");
   for (int i = 0; i < len; i++) {
     Serial.print(incomingData[i], HEX);
     Serial.print(' ');
   }
   Serial.println();
-  Serial.println("Received data:");
-
-  for (int i = 0; i < len; i++) {
-    if (incomingData[i] == 0) {
-    } 
-    else 
-    {
-      if (Switch == false && incomingData[i] != 10){
-        Data1 = Data1 + (char)incomingData[i];
-      }
-    }
-  }
-  
+  Serial.println("----------------------------------------------------");
+  Serial.print("Received data from MAC: ");
+  Serial.println(MAC);
+  Serial.println("----------------------------------------------------");
   Serial.print("Type: ");
-  Serial.println(myData.type);
+  Serial.println(convertType(myData.type));
   Serial.println();
   Serial.print("Value 1: ");
   Serial.println(myData.c);
   Serial.print("Value 2: ");
   Serial.println(myData.d);
-  
-  updateSensorData("The", String(myData.type), myData.c, myData.d);
-  Serial.println("Printing Table Data");
-  //printSensorData();
-  
+  Serial.println("----------------------------------------------------");
+  Serial.print("Friendly Name: ");
+  Serial.println(FindFriendlyName(MAC));
+  Serial.println("----------------------------------------------------");
+  Serial.print("Recorded At: ");
+  Serial.println(String(GetTime()));
+  Serial.println("----------------------------------------------------");
+  printSensorData();
+  Serial.println("----------------------------------------------------");
+  updateSensorData(FindFriendlyName(MAC), String(convertType(myData.type)), myData.c, myData.d);
+  SDWrite(String(FindFriendlyName(MAC)), String(GetTime()));
 }
 
 
 void setup() {
   Serial.begin(115200);
-  createPoint(ssid);
-  Serial.println("");
-  //Serial.print("Connected to WiFi. IP address: ");
+  EEPROM.begin(512);
   server.on("/getmac", HTTP_GET, handleGetMAC);
 
   //JQUERY
@@ -243,24 +229,43 @@ void setup() {
   server.on("/Network_Add", handleNetworkInput);
   server.on("/Network_Found", handleNetworkDevices);
   server.on("/Sensor_Data", handleSensorData);
-
+  Serial.println("---------------------");
   Serial.println("[*] Setting up WiFi Station");
+  createPoint(ssid);
   Serial.println("[+] WiFi Station online!");
+  Serial.println("---------------------");
   Serial.println("[*] Initializing ESP-NOW");
-  Serial.println(ESP.getFreeHeap());
   if (esp_now_init() != ESP_OK) {
     Serial.println("[!] Error initalizing ESP-NOW");
     return;
   } else {
     Serial.println("[+] ESP-NOW Ready");
+    esp_now_register_recv_cb(OnDataRecv);
   }
-  esp_now_register_recv_cb(OnDataRecv);
-
+  Serial.println("---------------------");
+  Serial.println("[*] Starting HTTP Server");
   server.begin();
-  Serial.println("HTTP server started.");
+  Serial.println("[+] HTTP Server Ready!");
+  Serial.println("---------------------");
+  Serial.println("[*] Starting OTA server");
   ArduinoOTA.setHostname(OTA_Host_Name);
   ArduinoOTA.begin();
-  Serial.println("OTA server started.");
+  Serial.println("[+] OTA Server Ready!");
+  Serial.println("---------------------");
+  Serial.print("[*] Starting RTC: ");
+  URTCLIB_WIRE.begin();
+  Serial.print("[+] RTC Started: ");
+  Serial.println("---------------------");
+  Serial.println("[*] Starting RTC: ");
+  SDStart();
+  Serial.println("[+] RTC Started: ");
+  Serial.println("---------------------");
+  Serial.print("[*] Ram Free: ");
+  Serial.println(ESP.getFreeHeap());
+  Serial.println("---------------------");
+
+  
+  //changeWifiSettings("TheBlock", "10cartledge", "0", "0");
 }
 
 void loop() {
