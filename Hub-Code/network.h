@@ -217,13 +217,13 @@ const char network_html[] PROGMEM = R"=====(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Home Hub</title>
+  <title>WASP Hub</title>
 </head>
 
 <body>
   <header>
     <div class="logo">
-      <h1>Smart Home Hub</h1>
+      <h1>WASP Hub</h1>
     </div>
   </header>
   <!-- Nav Bar -->
@@ -259,8 +259,8 @@ const char network_html[] PROGMEM = R"=====(
   </div>
 
   <footer>
-    <p>This website is running off a Home Hub Device</p>
-    <p>&copy; 2023 Home Hub. All rights reserved.</p>
+    <p>This website is running off a WASP Hub Device</p>
+    <p>&copy; 2023 WASP Hub. All rights reserved.</p>
   </footer>
   <script>
     function toggleNav() {
@@ -269,7 +269,6 @@ const char network_html[] PROGMEM = R"=====(
       console.log("Nav Toggle");
     }
   </script> 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
 
     function request(success, error) {
