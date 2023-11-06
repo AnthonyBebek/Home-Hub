@@ -229,13 +229,14 @@ const char hub_html[] PROGMEM = R"=====(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WASP Hub</title>
+  <title>Smart Home Hub</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
   <header>
     <div class="logo">
-      <h1>WASP Hub</h1>
+      <h1>Smart Home Hub</h1>
     </div>
   </header>
   <!-- Nav Bar -->
@@ -251,6 +252,7 @@ const char hub_html[] PROGMEM = R"=====(
       <li><a href="hub">Hub</a></li>
       <li><a href="actions">Actions</a></li>
       <li><a href="network">Network</a></li>
+      <li><a href="graphs">Graphs</a></li>
     </ul>
     <div class="close-button" onclick="toggleNav()"></div>
   </nav>
@@ -290,8 +292,8 @@ const char hub_html[] PROGMEM = R"=====(
   </div>
 
   <footer>
-    <p>This website is running off a WASP Hub Device</p>
-    <p>&copy; 2023 WASP Hub. All rights reserved.</p>
+    <p>This website is running off a Home Hub Device</p>
+    <p>&copy; 2023 Home Hub. All rights reserved.</p>
   </footer>
   <script>
     function toggleNav() {
