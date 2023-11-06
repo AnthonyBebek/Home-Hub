@@ -1,3 +1,5 @@
+
+
 void changeWifiSettings(const char* newSSID, const char* newPassword, const char* newIP, const char* newSubnet) {
   Serial.print("Connecting to: ");
   Serial.println(newSSID);
@@ -23,6 +25,9 @@ void changeWifiSettings(const char* newSSID, const char* newPassword, const char
   }
 
   Serial.println("Applying new WiFi settings...");
+  delay(1000);
+  Serial.print("New IP Address: ");
+  Serial.println(WiFi.localIP());
   delay(100);
   Serial.println("Done");
 }
