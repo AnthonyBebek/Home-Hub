@@ -19,7 +19,7 @@ void createPoint(const char* ssid) {
   const char* password = "password";
   Serial.print("[*] Creating New Access Point ... ");
   WiFi.mode(WIFI_AP_STA);
-  Serial.println(WiFi.softAP(ssid, password, 1) ? "Ready" : "Failed!");
+  Serial.println(WiFi.softAP(ssid, NULL, 1) ? "Ready" : "Failed!");
   Serial.println("[+] AccessPoint Created");
   Serial.print("[*] AccessPoint SSID: ");
   Serial.println(ssid);
