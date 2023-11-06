@@ -1,4 +1,5 @@
-const char index_html[] PROGMEM = R"=====(<!DOCTYPE html>
+const char index_html[] PROGMEM = R"=====(
+<!DOCTYPE html>
 <!DOCTYPE html>
 <html lang="en">
 <style>
@@ -318,13 +319,13 @@ const char index_html[] PROGMEM = R"=====(<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WASP Hub</title>
+  <title>Smart Home Hub</title>
 </head>
 
 <body>
   <header>
     <div class="logo">
-      <h1>WASP Hub</h1>
+      <h1>Smart Home Hub</h1>
     </div>
   </header>
   <!-- Nav Bar -->
@@ -340,6 +341,7 @@ const char index_html[] PROGMEM = R"=====(<!DOCTYPE html>
       <li><a href="hub">Hub</a></li>
       <li><a href="actions">Actions</a></li>
       <li><a href="network">Network</a></li>
+      <li><a href="graphs">Graphs</a></li>
     </ul>
     <div class="close-button" onclick="toggleNav()"></div>
   </nav>
@@ -374,8 +376,8 @@ const char index_html[] PROGMEM = R"=====(<!DOCTYPE html>
   </div>
 
   <footer>
-    <p>This website is running off a WASP Hub Device</p>
-    <p>&copy; 2023 WASP Hub. All rights reserved.</p>
+    <p>This website is running off a Home Hub Device</p>
+    <p>&copy; 2023 Home Hub. All rights reserved.</p>
   </footer>
   <script>
     function toggleNav() {
@@ -385,6 +387,7 @@ const char index_html[] PROGMEM = R"=====(<!DOCTYPE html>
     }
   </script>
     <script>
+      var data;
       let xhr= new XMLHttpRequest();
 
       xhr.responseType='';
@@ -396,7 +399,7 @@ const char index_html[] PROGMEM = R"=====(<!DOCTYPE html>
           var Rawdata = xhr.responseText;
           console.log("Sensor Data: ", data);
 
-          var data = JSON.parse(Rawdata);
+          data = JSON.parse(Rawdata);
       
             let table = document.querySelector("#Sensors");
             let keys = Object.keys(data[0]);
@@ -408,35 +411,31 @@ const char index_html[] PROGMEM = R"=====(<!DOCTYPE html>
         xhr.open("GET", url);
         xhr.send();
 
-
-
 let mainTable = document.querySelector("#Sensors");
 
 let categoryTables = {};
 
+/*
 data.forEach(element => {
-  console.log("The");
   if (!categoryTables[element.Category]) {
     categoryTables[element.Category] = createCategoryTable(element.Category);
     mainTable.appendChild(categoryTables[element.Category]);
   }
   generateTable(categoryTables[element.Category], [element]);
 });
+*/
 
 function createCategoryTable(category) {
-  console.log("Creating Category Table");
-  console.log(category);
   let table = document.createElement("table");
   let caption = table.createCaption();
   caption.textContent = category;
   caption.className = "category-caption";
   table.className = "category-table";
-  generateTableHead(table, ["Name", "Temperature", "Humidity"]);
+  generateTableHead(table, ["Name", "Value1", "Value2"]);
   return table;
 }
 
 function generateTableHead(table, data) {
-  console.log("Table Head Generated");
   let thead = table.createTHead();
   let row = thead.insertRow();
   for (let key of data) {
@@ -459,45 +458,51 @@ function generateTable(table, data) {
   }
 }
 
-
-/*
-
-$.ajax({
-  type: "GET",
-  url: "/Switch_Data",
-  dataType: "json",
-  success: function(data) {
-    console.log("Switch Data: ", data);
-
-    let table = document.querySelector("#Switches");
-    let keys = Object.keys(data[0]);
-    generateTableHead(table, keys);
-    generateTable(table, data);
-  },
-  error: function(xhr, status, error) {
-    console.error("Error fetching switches:", error);
-  }
-});
-*/
 data = [
-{"Name": "Master Bed", "Category": "Temperature"},
-{"Name": "Kitchen", "Category": "Temperature"},
-{"Name": "Living Room", "Category": "Light"},
-{"Name": "Bathroom", "Category": "Light"},
-{"Name": "Outside", "Category": "Air Quality"},
-{"Name": "Inside", "Category": "Air Quality"},
+{"Name": "Master Bed", "Category": "Lights"},
+{"Name": "Kitchen", "Category": "Lights"},
+{"Name": "Garage", "Category": "Lights"},
+{"Name": "Loung Room", "Category": "Lights"},
+{"Name": "Family Room", "Category": "Lights"},
+{"Name": "Theatre", "Category": "Lights"},
+
+{"Name": "Master Bed", "Category": "Dampers"},
+{"Name": "Kitchen", "Category": "Dampers"},
+{"Name": "Garage", "Category": "Dampers"},
+{"Name": "Loung Room", "Category": "Dampers"},
+{"Name": "Family Room", "Category": "Dampers"},
+{"Name": "Theatre", "Category": "Dampers"},
+
+{"Name": "Master Bed", "Category": "Automatic Blinds"},
+{"Name": "Kitchen", "Category": "Automatic Blinds"},
+{"Name": "Garage", "Category": "Automatic Blinds"},
+{"Name": "Loung Room", "Category": "Automatic Blinds"},
+{"Name": "Family Room", "Category": "Automatic Blinds"},
+{"Name": "Theatre", "Category": "Automatic Blinds"},
+
+{"Name": "Bathroom", "Category": "Fans"},
+{"Name": "Laundry", "Category": "Fans"},
+
+{"Name": "Coffee Machine", "Category": "Other"},
+{"Name": "3D Printer", "Category": "Other"},
+{"Name": "Christmas Lights", "Category": "Other"},
+{"Name": "Party Lights", "Category": "Other"},
+
+
 ];
+console.log(data);
 
 mainTable = document.querySelector("#Switches");
 
 categoryTables = {};
-
+let buttoncount = 0;
 data.forEach(element => {
 if (!categoryTables[element.Category]) {
 categoryTables[element.Category] = createCategoryTable2(element.Category);
 mainTable.appendChild(categoryTables[element.Category]);
 }
-generateTable2(categoryTables[element.Category], [element]);
+generateTable2(categoryTables[element.Category], [element], buttoncount);
+buttoncount = ++buttoncount;
 });
 
 function createCategoryTable2(category) {
@@ -521,7 +526,7 @@ row.appendChild(th);
   }
 }
 
-function generateTable2(table, data) {
+function generateTable2(table, data, buttoncount) {
   for (let element of data) {
     let row = table.insertRow();
     row.insertCell().appendChild(document.createTextNode(element.Name));
@@ -531,15 +536,17 @@ function generateTable2(table, data) {
 
     let checkbox = document.createElement("input");
     checkbox.type = "checkbox";
-    checkbox.checked = true;
+    checkbox.checked = false;
     checkbox.setAttribute('id', 'switch');
     Name = element.Name.replace(/ /g,"_");
     CategoryName = element.Category.replace(/ /g,"_");
-  //console.log(Name);
-  //console.log(CategoryName)
-  //console.log(button);
-    checkbox.setAttribute('onclick','send(\'' + String(Name) + '\', \'' + String(CategoryName) + '\', \'' + String(button) + '\')');
-    checkbox.setAttribute('id', String(button));
+
+    let button = document.createElement("button");
+    button.setAttribute('id', element.Name.replace(/ /g,"_") + "_" + buttoncount);
+    let ButtonName = element.Name.replace(/ /g,"_") + "_Button_" + buttoncount;
+    checkbox.setAttribute('onclick','send(\'' + String(Name) + '\', \'' + String(buttoncount) + '\', \'' + String(ButtonName) + '\')');
+    checkbox.setAttribute('id', ButtonName);
+    console.log(checkbox);
     label.appendChild(checkbox);
 
     let sliderSpan = document.createElement("span");
@@ -552,14 +559,45 @@ function generateTable2(table, data) {
 }
 
 
-function send(name, category, ID){
-  console.log("Name: " + name);
-  console.log("Category: " + category);
-  console.log(document.getElementById(ID).checked);
+function send(name, count, ID){
+  //console.log(ID);
+  let buttonstatus = document.getElementById(ID).checked
+  //console.log("Name: " + name);
+  //console.log("Category: " + category);
+  //console.log(buttonstatus);
+
+  console.log(count + " " + buttonstatus)
+
+  var data = {
+    Button: count,
+    State: buttonstatus
+  };
+
+  console.log(JSON.stringify(data));
+  
+  fetch("/Button_Data", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
+    .then(response => {
+      console.log("Info sent successfully:", response);
+    })
+    .catch(error => {
+      console.error("Error sending Info:", error);
+    });
+
 }
   </script> 
 </body>
 
 </html>
-
 )=====";
