@@ -6,20 +6,18 @@
 #include <ArduinoOTA.h>
 #include <list>
 #include <EEPROM.h>
-#include <esp_now.h>
+#include <WiFiUdp.h>
+#include <NTPClient.h>
+
+String RadioOutput;
+String RadioMAC;
+String RadioType;
+String RadioC;
+String RadioD;
+String RadioInput;
 
 //Networking Array work
-#include "temp.h"
 std::list<String> macAddresses;
-
-
-struct MyData {
-  int type; // Maximum length for Type
-  float c;         // Temp
-  float d;         // Humid
-};
-
-MyData myData;
 
 //Website Pages
 #include "index.h"
@@ -29,16 +27,16 @@ MyData myData;
 #include "test.h"
 #include "network.h"
 #include "WIFI_AP.h"
+#include "Graphs.h"
 
 //JQuery Pages
 #include "JQuery.h"
+#include "temp.h"
 
 //External Scripts
 #include "NetworkSettings.h"
 #include "SensorData.h"
 #include "Support.h"
-#include "time.h"
-#include "SDSave.h"
 
 //#define OTA_Host_Name "HHClient-Temperature"
 #define OTA_Host_Name "WASP-Network"
@@ -48,9 +46,10 @@ const char* ssid = OTA_Host_Name;
 WebServer server(80);
 
 void handleGetMAC() {
-  Serial.println(WiFi.macAddress());
-  server.send(200, "text/plain", String(WiFi.macAddress()));
-  Serial.println("Someone requested HUB MAC!");
+  //server.send(200, "text/plain", String(WiFi.macAddress()));
+  server.send(200, "text/plain", String(RadioMAC));
+  Serial.print("Someone requested HUB - Radio MAC: ");
+  Serial.println(String(RadioMAC));
 }
 
 void setupHub() {
@@ -71,10 +70,8 @@ void handleRoot() {
 }
 
 void handleJQuery() {
-  Serial.println("Free heap: " + String(ESP.getFreeHeap()) + " bytes");
-  server.send(200, "text/html", jquery_min_js);
-  Serial.println(jquery_min_js);
   Serial.println("Jquery Requested");
+  server.send(200, "application/javascript", huhu3);
 }
 
 void handleHub() {
@@ -99,6 +96,11 @@ void handleNetwork() {
   server.send(200, "text/html", network_html);
 }
 
+void handleGraphs() {
+  Serial.println("Client requested Graphs");
+  server.send(200, "text/html", graphs_html);
+}
+
 void handleInfoInput() {
   if (server.method() == HTTP_POST) {
     String name = server.arg("Name");
@@ -117,26 +119,31 @@ void handleInfoInput() {
 
 void handleWifiInput() {
   if (server.method() == HTTP_POST) {
-    String SSID = server.arg("SSID_Name");
-    String password = server.arg("Pass");
-    String IP = server.arg("IPAddr");
-    String Subnet = server.arg("Subent_Mask");
+    String rawData = server.arg(0);
 
-    Serial.println("Received POST data for Wifi:");
-    Serial.print("SSID: ");
-    Serial.println(SSID);
-    Serial.print("Password: ");
-    Serial.println(password);
-    Serial.print("IP: ");
-    Serial.println(IP);
-    Serial.print("Subnet: ");
-    Serial.println(Subnet);
-    changeWifiSettings(SSID.c_str(), password.c_str(), IP.c_str(), Subnet.c_str());
+    Serial.println("[*] Raw Data");
+    Serial.println("[√] Received POST data for Wifi:");
+    rawData = rawData + "!";
+    phraseWifiString(rawData);
     return;
   }
 
-  server.send(200, "text/html", "Ok");
+  server.send(200, "application/json", "Ok");
   Serial.println("Client sent wifi data");
+}
+
+void handleButtonInput() {
+  if (server.method() == HTTP_POST) {
+    String rawData = server.arg(0);
+    Serial.println("[*] Raw Data");
+    Serial.println("[√] Received POST data for Buttonss:");
+    rawData = rawData + "!";
+    Serial.println(rawData);
+    phraseButtonData(rawData);
+    return;
+  }
+  server.send(200, "text/html", "Ok");
+  Serial.println("Client sent button data");
 }
 
 void handleNetworkInput() {
@@ -166,52 +173,16 @@ void handleSensorData() {
   String Sensor_Data = GetSensorValues();
   server.send(200, "application/json", Sensor_Data);
 }
-
-void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
-  String Data1;
-  String MAC;
-  memcpy(&myData, incomingData, sizeof(myData));
-
- 
-  for (int i = 0; i < 6; i++) {
-    MAC = MAC + (convertDecimalToHex(mac[i]));
-    if (i < 5){
-      MAC = MAC + ":";
-    }
-  }
-  Serial.print("Received RAW data: ");
-  for (int i = 0; i < len; i++) {
-    Serial.print(incomingData[i], HEX);
-    Serial.print(' ');
-  }
-  Serial.println();
-  Serial.println("----------------------------------------------------");
-  Serial.print("Received data from MAC: ");
-  Serial.println(MAC);
-  Serial.println("----------------------------------------------------");
-  Serial.print("Type: ");
-  Serial.println(convertType(myData.type));
-  Serial.println();
-  Serial.print("Value 1: ");
-  Serial.println(myData.c);
-  Serial.print("Value 2: ");
-  Serial.println(myData.d);
-  Serial.println("----------------------------------------------------");
-  Serial.print("Friendly Name: ");
-  Serial.println(FindFriendlyName(MAC));
-  Serial.println("----------------------------------------------------");
-  Serial.print("Recorded At: ");
-  Serial.println(String(GetTime()));
-  Serial.println("----------------------------------------------------");
-  printSensorData();
-  Serial.println("----------------------------------------------------");
-  updateSensorData(FindFriendlyName(MAC), String(convertType(myData.type)), myData.c, myData.d);
-  SDWrite(String(FindFriendlyName(MAC)), String(GetTime()));
+void handleGraphData() {
+  Serial.println("Graph Data Requested");
+  String Graph_Data = GetData();
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "application/json", Graph_Data);
 }
-
 
 void setup() {
   Serial.begin(115200);
+  Serial2.begin(115200);
   EEPROM.begin(512);
   server.on("/getmac", HTTP_GET, handleGetMAC);
 
@@ -226,51 +197,80 @@ void setup() {
   server.on("/network", handleNetwork);
   server.on("/info", handleInfoInput);
   server.on("/wifi", handleWifiInput);
+  server.on("/graphs", handleGraphs);
   server.on("/Network_Add", handleNetworkInput);
   server.on("/Network_Found", handleNetworkDevices);
   server.on("/Sensor_Data", handleSensorData);
+  server.on("/Graph_Data", handleGraphData);
+  server.on("/Button_Data", handleButtonInput);
   Serial.println("---------------------");
   Serial.println("[*] Setting up WiFi Station");
   createPoint(ssid);
-  Serial.println("[+] WiFi Station online!");
   Serial.println("---------------------");
-  Serial.println("[*] Initializing ESP-NOW");
-  if (esp_now_init() != ESP_OK) {
-    Serial.println("[!] Error initalizing ESP-NOW");
-    return;
-  } else {
-    Serial.println("[+] ESP-NOW Ready");
-    esp_now_register_recv_cb(OnDataRecv);
-  }
-  Serial.println("---------------------");
+  Serial.println("[√] WiFi Station online!");
   Serial.println("[*] Starting HTTP Server");
   server.begin();
-  Serial.println("[+] HTTP Server Ready!");
   Serial.println("---------------------");
+  Serial.println("[√] HTTP Server Ready!");
   Serial.println("[*] Starting OTA server");
   ArduinoOTA.setHostname(OTA_Host_Name);
   ArduinoOTA.begin();
   Serial.println("[+] OTA Server Ready!");
   Serial.println("---------------------");
-  Serial.print("[*] Starting RTC: ");
-  URTCLIB_WIRE.begin();
-  Serial.print("[+] RTC Started: ");
-  Serial.println("---------------------");
   Serial.println("[*] Starting RTC: ");
-  SDStart();
-  Serial.println("[+] RTC Started: ");
+  URTCLIB_WIRE.begin();
+  Serial.println("[*] Date & Time: " + String(GetTime()));
   Serial.println("---------------------");
+  Serial.println("[√] RTC Started: ");
+  Serial.println("[*] Starting SD: ");
+  SDStart();
+  Serial.println("[+] SD Started: ");
+  Serial.println("[*] Updating SD Database: ");
+  UpdateDB();
+  Serial.println("---------------------");
+  Serial.println("[√] Updated SD Database: ");
   Serial.print("[*] Ram Free: ");
   Serial.println(ESP.getFreeHeap());
   Serial.println("---------------------");
+  Serial.print("[*] Querying ESP8266: ");
+  Serial2.println("2");
+  unsigned long starttime;
+  starttime = millis();
+  while (RadioMAC.length() != 17) {
+    if (millis() - starttime >= 2000) {
+      Serial2.println("2");
+      starttime = millis();
+      Serial.println("[!] Incorrect or NULL Responce");
+      Serial.println("[!] Trying Again");
+    }
+    if (Serial2.available()) {
+      RadioMAC = Serial2.readString();
+      Serial.println(RadioMAC);
+      RadioMAC = RadioMAC.substring(0, RadioMAC.length() - 17);
+    }
+  }
+  Serial.print("[√] ESP8266 MAC Address: ");
+  Serial.println(RadioMAC);
+  Serial.println("---------------------");
+  Serial.println("[√] Setup Finished!");
 
-  
+  //readfile();
+
   //changeWifiSettings("TheBlock", "10cartledge", "0", "0");
+  //SetTime();
 }
 
 void loop() {
   server.handleClient();
-  delay(1);
+  //delay(1);
+
+  if (Serial2.available()) {
+    RadioOutput = Serial2.readString();
+    Serial.println(RadioOutput);
+    parseDataString(RadioOutput);
+  }
+
+  //fun();
   //ArduinoOTA.handle();
   //Serial.println("Free heap: " + String(ESP.getFreeHeap()) + " bytes");
   //client_status();
