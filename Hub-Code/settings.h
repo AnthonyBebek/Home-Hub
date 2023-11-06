@@ -229,13 +229,14 @@ const char settings_html[] PROGMEM = R"=====(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WASP Hub</title>
+  <title>Smart Home Hub</title>
 </head>
 
 <body>
   <header>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <div class="logo">
-      <h1>WASP Hub</h1>
+      <h1>Smart Home Hub</h1>
     </div>
   </header>
   <!-- Nav Bar -->
@@ -251,6 +252,7 @@ const char settings_html[] PROGMEM = R"=====(
       <li><a href="hub">Hub</a></li>
       <li><a href="actions">Actions</a></li>
       <li><a href="network">Network</a></li>
+      <li><a href="graphs">Graphs</a></li>
     </ul>
     <div class="close-button" onclick="toggleNav()"></div>
   </nav>
@@ -290,21 +292,21 @@ const char settings_html[] PROGMEM = R"=====(
   </div>
 
   <footer>
-    <p>This website is running off a WASP Hub Device</p>
-    <p>&copy; 2023 WASP Hub. All rights reserved.</p>
+    <p>This website is running off a Home Hub Device</p>
+    <p>&copy; 2023 Home Hub. All rights reserved.</p>
   </footer>
 <script>
-      function toggleNav() {
-        var navList = document.querySelector('.nav-list');
-        navList.classList.toggle('active');
-        console.log("Nav Toggle");
-      }
+function toggleNav() {
+  var navList = document.querySelector('.nav-list');
+  navList.classList.toggle('active');
+  console.log("Nav Toggle");
+}
 
-      $('#Info').submit(function () {
-        console.log("Trigger 1");
-        sendInfo();
-        return false;
-      });
+document.getElementById('Info').addEventListener('submit', function (event) {
+  event.preventDefault();
+  console.log("Trigger 1");
+  sendInfo();
+});
 
       function sendInfo() {
         var name = document.getElementById("Name").value;
@@ -317,70 +319,90 @@ const char settings_html[] PROGMEM = R"=====(
             Name: name,
             Pass: password
         };
+        console.log(JSON.stringify(data));
         
-        $.ajax({
-            type: "POST",
-            url: "/info",
-            data: data,
-            success: function(response) {
-                console.log("Info sent successfully:", response);
+        let url = "/wifi";
+
+        
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
             },
-            error: function(error) {
-                console.error("Error sending Info:", error);
-            }
-        });
+            body: JSON.stringify(data),
+        })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Network response was not ok');
+                }
+            })
+            .then(responseData => {
+                console.log("Data sent successfully:", responseData);
+            })
+            .catch(error => console.error('Error sending Data:', error));
         
-      }
-
-      $('#Wifi').submit(function () {
-        const ip = $('#IP').val();
-        const subnet = $('#Subnet').val();
-        
-        if ((ip && !subnet) || (!ip && subnet)) {
-          alert("Both IP Address and Subnet Mask must be provided if either is entered.");
-          return false;
-        }
-    
-        console.log("Trigger 2");
-        sendWifi();
-
-        if (ip) {
-          setTimeout(function () {
-            window.location.href = 'http://' + ip + '/settings';
-          }, 2000);
-          return false; 
-        }
-
-        return false;
-      });
-
-      function sendWifi() {
-        var SSID = document.getElementById("SSID").value;
-        var Password = document.getElementById("Pass").value;
-        var IP = document.getElementById("IP").value;
-        var Subnet = document.getElementById("Subnet").value;
-        console.log("Sending Wifi");
-
-        var data = {
-          SSID_Name: SSID,
-          Pass: Password,
-          IPAddr: IP,
-          Subent_Mask: Subnet
-        };
-        $.ajax({
-          type: "POST",
-          url: "/wifi",
-          data: data,
-          success: function(response) {
-              console.log("Info sent successfully:", response);
-          },
-          error: function(error) {
-              console.error("Error sending Info:", error);
           }
-      });
+          document.getElementById('Wifi').addEventListener('submit', function (event) {
+  event.preventDefault();
+
+  const ip = document.getElementById('IP').value;
+  const subnet = document.getElementById('Subnet').value;
+
+  if ((ip && !subnet) || (!ip && subnet)) {
+    alert("Both IP Address and Subnet Mask must be provided if either is entered.");
+    return false;
+  }
+
+  console.log("Trigger 2");
+  sendWifi();
+
+  if (ip) {
+    setTimeout(function () {
+      window.location.href = 'http://' + ip + '/settings';
+    }, 2000);
+  }
+});
+
+
+function sendWifi() {
+  var SSID = document.getElementById("SSID").value;
+  var Password = document.getElementById("Pass").value;
+  var IP = document.getElementById("IP").value;
+  var Subnet = document.getElementById("Subnet").value;
+  console.log("Sending Wifi");
+
+  var data = {
+    SSID_Name: SSID,
+    Pass: Password,
+    IPAddr: IP,
+    Subent_Mask: Subnet
+  };
+
+  fetch("/wifi", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
       }
+      return response.json();
+    })
+    .then(response => {
+      console.log("Info sent successfully:", response);
+    })
+    .catch(error => {
+      console.error("Error sending Info:", error);
+    });
+}
+
   </script> 
 </body>
-
 </html>
 )=====";
